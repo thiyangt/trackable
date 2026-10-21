@@ -200,7 +200,7 @@ simulate_elephant <- function(
 # 3. Generate two years of hourly data
 # --------------------------------------------------
 
-elephant_tracking <- simulate_elephant(
+elephant_kawudulla_female <- simulate_elephant(
   core_points = core_points,
   other_points = other_points,
   seed = 2024
@@ -209,12 +209,6 @@ elephant_tracking <- simulate_elephant(
 # Check number of records and timestamps
 nrow(elephant_tracking)
 range(elephant_tracking$timestamp)
-
-# Save the dataset
-write_csv(
-  elephant_tracking,
-  "male_elephant_tracking_2024_2025.csv"
-)
 
 # Inspect records
 print(elephant_tracking, n = 10)

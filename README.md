@@ -124,3 +124,81 @@ dplyr::filter(trk, animal_id == "E001")
 #> 3 E001      2022-01-03 08:00:00  80.8  7.82    250 Female
 #> 4 E001      2022-01-04 08:00:00  80.9  7.98    250 Female
 ```
+
+# Example with toy dataset
+
+``` r
+data(elephant_crossing_maha_oya_pinnawala)
+trk_elephant <- trackable(
+  data = elephant_crossing_maha_oya_pinnawala,
+  time = date_time,
+  x = longitude,
+  y = latitude,
+  key = c("animal_id", "sex", "age_class"),
+  crs = 4326
+)
+trk_elephant
+#> # A trackable: 25 x 9 [3D]
+#> #> # Key:       animal_id, sex, age_class [1]
+#> # A tibble: 25 × 9
+#>    animal_id date_time           latitude longitude location     sex   age_class
+#>    <chr>     <dttm>                 <dbl>     <dbl> <chr>        <lgl> <chr>    
+#>  1 ELE_001   2026-10-21 10:00:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  2 ELE_001   2026-10-21 10:05:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  3 ELE_001   2026-10-21 10:10:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  4 ELE_001   2026-10-21 10:15:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  5 ELE_001   2026-10-21 10:20:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  6 ELE_001   2026-10-21 10:25:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  7 ELE_001   2026-10-21 10:30:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  8 ELE_001   2026-10-21 10:35:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  9 ELE_001   2026-10-21 10:40:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#> 10 ELE_001   2026-10-21 10:45:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#> # ℹ 15 more rows
+#> # ℹ 2 more variables: movement_phase <chr>, distance_m <dbl>
+```
+
+``` r
+library(ggplot2)
+library(sf)
+#> Linking to GEOS 3.14.1, GDAL 3.12.1, PROJ 9.7.1; sf_use_s2() is TRUE
+ggplot() +
+  geom_sf(data = trk_elephant, aes(), size = 2) +
+  theme_minimal() +
+  labs(
+    title = "Elephant Crossing the Maha Oya",
+    subtitle = "Pinnawala, Sri Lanka",
+    x = NULL,
+    y = NULL
+  )
+```
+
+<img src="man/figures/README-unnamed-chunk-4-1.png" alt="" width="100%" />
+
+``` r
+
+library(ggplot2)
+library(sf)
+library(ggspatial)
+library(prettymapr)
+
+ggplot() +
+  annotation_map_tile(type = "osm", zoom = 16) +
+  geom_sf(
+    data = trk_elephant,
+    size = 2,
+    colour = "red"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Elephant Crossing the Maha Oya",
+    subtitle = "Pinnawala, Sri Lanka",
+    x = NULL,
+    y = NULL
+  )
+#> Zoom: 16
+#> Fetching 1 missing tiles
+#>   |                                                                              |                                                                      |   0%  |                                                                              |======================================================================| 100%
+#> ...complete!
+```
+
+<img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />

@@ -81,4 +81,54 @@ dplyr::filter(trk, animal_id == "E001")
 
 
 
+# Example with toy dataset
 
+```{r}
+data(elephant_crossing_maha_oya_pinnawala)
+trk_elephant <- trackable(
+  data = elephant_crossing_maha_oya_pinnawala,
+  time = date_time,
+  x = longitude,
+  y = latitude,
+  key = c("animal_id", "sex", "age_class"),
+  crs = 4326
+)
+trk_elephant
+```
+
+```{r}
+library(ggplot2)
+library(sf)
+ggplot() +
+  geom_sf(data = trk_elephant, aes(), size = 2) +
+  theme_minimal() +
+  labs(
+    title = "Elephant Crossing the Maha Oya",
+    subtitle = "Pinnawala, Sri Lanka",
+    x = NULL,
+    y = NULL
+  )
+```
+
+```{r}
+
+library(ggplot2)
+library(sf)
+library(ggspatial)
+library(prettymapr)
+
+ggplot() +
+  annotation_map_tile(type = "osm", zoom = 16) +
+  geom_sf(
+    data = trk_elephant,
+    size = 2,
+    colour = "red"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Elephant Crossing the Maha Oya",
+    subtitle = "Pinnawala, Sri Lanka",
+    x = NULL,
+    y = NULL
+  )
+```

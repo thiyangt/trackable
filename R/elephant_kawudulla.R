@@ -69,7 +69,7 @@ simulate_elephant <- function(
     core_points,
     other_points,
     animal_id = "ELE001",
-    sex = "Male",
+    sex = "female",
     seed = 2024,
     core_step_sd = 180,
     excursion_probability = 0.015,

@@ -3,7 +3,8 @@
 #'
 #' Calculate distances, speeds, bearings, turning angles, cumulative
 #' distances, and displacement from the starting location.
-#'
+#' @importFrom rlang .data
+#' @importFrom stats complete.cases
 #' @param x A trackable object containing animal tracking observations.
 #' @param id Name of the animal identifier column.
 #' @param time Name of the date-time column.
@@ -228,34 +229,3 @@ movement_metrics <- function(
   
   x
 }
-library(dplyr)
-library(tibble)
-
-elephant_data <- tribble(
-  ~animal_id, ~date_time,             ~lon,     ~lat,
-  "E01",      "2026-10-23 08:00:00",  81.6740, 7.8920,
-  "E01",      "2026-10-23 08:05:00",  81.6750, 7.8925,
-  "E01",      "2026-10-23 08:10:00",  81.6760, 7.8930,
-  "E01",      "2026-10-23 08:15:00",  81.6760, 7.8930,
-  "E01",      "2026-10-23 08:20:00",  81.6770, 7.8940,
-  "E02",      "2026-10-23 08:00:00",  81.6800, 7.8950,
-  "E02",      "2026-10-23 08:05:00",  81.6805, 7.8960,
-  "E02",      "2026-10-23 08:10:00",  81.6815, 7.8965,
-  "E02",      "2026-10-23 08:15:00",  81.6820, 7.8975,
-  "E02",      "2026-10-23 08:20:00",  81.6830, 7.8980
-) |>
-  mutate(date_time = as.POSIXct(
-    date_time,
-    format = "%Y-%m-%d %H:%M:%S",
-    tz = "UTC"
-  ))
-
-elephant_track <- trackable(
-  elephant_data,
-  id = animal_id,
-  time = date_time,
-  key = c("animal_id"),
-  lon = lon,
-  lat = lat,
-  crs = 4326
-)

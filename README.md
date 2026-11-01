@@ -196,9 +196,37 @@ ggplot() +
     y = NULL
   )
 #> Zoom: 16
-#> Fetching 1 missing tiles
-#>   |                                                                              |                                                                      |   0%  |                                                                              |======================================================================| 100%
-#> ...complete!
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />
+
+``` r
+movement_metrics(trk_elephant,
+    id = "animal_id",
+    time = "date_time",
+    lon = "longitude",
+    lat = "latitude")
+#> Simple feature collection with 25 features and 16 fields
+#> Geometry type: POINT
+#> Dimension:     XY
+#> Bounding box:  xmin: 80.38799 ymin: 7.299185 xmax: 80.38907 ymax: 7.299751
+#> Geodetic CRS:  WGS 84
+#> # A tibble: 25 × 17
+#>    animal_id date_time           latitude longitude location     sex   age_class
+#>    <chr>     <dttm>                 <dbl>     <dbl> <chr>        <lgl> <chr>    
+#>  1 ELE_001   2026-10-21 10:00:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  2 ELE_001   2026-10-21 10:05:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  3 ELE_001   2026-10-21 10:10:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  4 ELE_001   2026-10-21 10:15:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  5 ELE_001   2026-10-21 10:20:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  6 ELE_001   2026-10-21 10:25:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  7 ELE_001   2026-10-21 10:30:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  8 ELE_001   2026-10-21 10:35:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#>  9 ELE_001   2026-10-21 10:40:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#> 10 ELE_001   2026-10-21 10:45:00     7.30      80.4 Maha Oya, P… FALSE Adult    
+#> # ℹ 15 more rows
+#> # ℹ 10 more variables: movement_phase <chr>, distance_m <dbl>,
+#> #   geometry <POINT [°]>, elapsed_time_s <dbl>, step_distance_m <dbl>,
+#> #   speed_m_s <dbl>, bearing_deg <dbl>, turn_angle_deg <dbl>,
+#> #   cumulative_distance_m <dbl>, displacement_m <dbl>
+```

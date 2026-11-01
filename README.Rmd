@@ -132,3 +132,11 @@ ggplot() +
     y = NULL
   )
 ```
+
+```{r}
+movement_metrics(trk_elephant,
+    id = "animal_id",
+    time = "date_time",
+    lon = "longitude",
+    lat = "latitude")
+```

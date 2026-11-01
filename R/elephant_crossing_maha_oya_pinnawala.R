@@ -39,4 +39,6 @@
 #' @name elephant_crossing_maha_oya_pinnawala
 #' @usage data(elephant_crossing_maha_oya_pinnawala)
 #' @keywords datasets
+#' @examples
+#' data("elephant_crossing_maha_oya_pinnawala")
 NULL

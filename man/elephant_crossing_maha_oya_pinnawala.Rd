@@ -45,4 +45,7 @@ analysis and visualisation of animal movement and tracking data.
 The data should not be interpreted as an official wildlife monitoring
 dataset or as a direct GPS tracking record.
 }
+\examples{
+data("elephant_crossing_maha_oya_pinnawala")
+}
 \keyword{datasets}

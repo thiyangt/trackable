@@ -1,6 +1,6 @@
 Package: trackable
 Title: Tidy Data Structure for Storing, Handling and Analyzing Animal Tracking Data
-Version: 0.0.0.9000
+Version: 0.0.1
 Authors@R:
     person(
       "Thiyanga S.",
@@ -10,7 +10,7 @@ Authors@R:
       comment = c(ORCID = "0000-0002-0656-9789")
     )
 Description: Tidy data structure for storing traking data and it also provides tools for analysing traking data.
-License:  GPL (>= 3)
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
@@ -22,7 +22,10 @@ Imports:
     geosphere
 Suggests:
     ggplot2,
+    knitr,
+    rmarkdown,
     testthat
 Depends: 
     R (>= 3.5)
 LazyData: true
+VignetteBuilder: knitr

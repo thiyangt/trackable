@@ -9,11 +9,13 @@ Authors@R:
       role = c("aut", "cre"),
       comment = c(ORCID = "0000-0002-0656-9789")
     )
-Description: Tidy data structure for storing traking data and it also provides tools for analysing traking data.
+Description: A tidy data structure for storing tracking data, with tools for analysing it.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+URL: https://github.com/thiyangt/trackable
+BugReports: https://github.com/thiyangt/trackable/issues
 Imports:
     dplyr,
     rlang,

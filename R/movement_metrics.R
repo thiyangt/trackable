@@ -1,4 +1,3 @@
-
 #' Calculate movement metrics for tracked animals
 #'
 #' Calculate distances, speeds, bearings, turning angles, cumulative

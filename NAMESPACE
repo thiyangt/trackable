@@ -2,6 +2,7 @@
 
 S3method(print,trackable)
 export(movement_metrics)
+export(track_hull)
 export(trackable)
 importFrom(rlang,.data)
 importFrom(stats,complete.cases)

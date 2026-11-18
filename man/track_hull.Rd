@@ -2,9 +2,9 @@
 % Please edit documentation in R/track_hull.R
 \name{track_hull}
 \alias{track_hull}
-\title{Calculate Convex Hulls for Animal Tracking Data}
+\title{Calculate Convex or Concave Hulls for Animal Tracking Data}
 \usage{
-track_hull(x, by = NULL, ...)
+track_hull(x, by = NULL, method = c("convex", "concave"), ...)
 }
 \arguments{
 \item{x}{A \code{trackable} object.}
@@ -12,20 +12,33 @@ track_hull(x, by = NULL, ...)
 \item{by}{Optional character vector specifying grouping variables.
 Defaults to the tracking keys stored in \code{x}.}
 
-\item{...}{Additional arguments passed to \code{\link[sf:st_convex_hull]{sf::st_convex_hull()}}.}
+\item{method}{Character string specifying the hull method:
+\code{"convex"} for a minimum convex polygon or \code{"concave"} for
+a concave hull. Defaults to \code{"convex"}.}
+
+\item{...}{Additional arguments passed to the underlying
+hull calculation function.}
 }
 \value{
-An \code{sf} object containing one convex hull polygon
-for each animal or group.
+An \code{sf} object containing one hull polygon for each
+animal or group.
 }
 \description{
-Calculate the minimum convex polygon enclosing the observed
-locations of each animal or group.
+Calculate a spatial boundary enclosing the observed locations
+of each animal or group using either a convex or concave hull.
+A convex hull provides the minimum convex polygon enclosing
+all observed locations, whereas a concave hull can follow
+irregular spatial patterns more closely.
 }
 \examples{
-# hull <- track_hull(trk)
+# Calculate convex hulls
+# track_hull(trk, method = "convex")
+
+# Calculate concave hulls
+# track_hull(trk, method = "concave")
 
 }
 \seealso{
-\code{\link[=track_home_range]{track_home_range()}}, \code{\link[=track_utilization_distribution]{track_utilization_distribution()}}
+\code{\link[=track_home_range]{track_home_range()}},
+\code{\link[=track_utilization_distribution]{track_utilization_distribution()}}
 }

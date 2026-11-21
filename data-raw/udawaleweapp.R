@@ -1,5 +1,12 @@
 # =====================================================================
-# Elephant movement data generator (1 year) - Udawalawe
+# Elephant movement data generator (1 year) - R Shiny app, version 2
+#  * mean + SD for the annual metrics (drawn per simulated elephant)
+#  * habitats are drawn as paths / points on a map
+#  * behaviour-state correlated random walk (turning angle, speed by
+#    time period) with foraging, travelling, resting, bathing, sleeping
+# Packages: shiny, ggplot2, DT, leaflet, leaflet.extras, MASS
+#   install.packages(c("shiny","ggplot2","DT","leaflet","leaflet.extras"))
+# Run:  shiny::runApp("app.R")
 # =====================================================================
 library(shiny)
 library(ggplot2)
@@ -23,11 +30,11 @@ period_defaults <- data.frame(
   tm = c(40, 15, 25, 35, 15, 20),       ts = c(60, 30, 40, 50, 30, 35),
   stringsAsFactors = FALSE)
 beh_defaults <- rbind(c(10, 0, 15, 0, 75),   # Night
-                      c(40, 35, 10, 15, 0),  # Pre-dawn
-                      c(60, 15, 10, 15, 0),  # Morning
-                      c(20, 5, 40, 25, 10),  # Midday
-                      c(55, 25, 10, 10, 0),  # Afternoon
-                      c(70, 20, 5, 5, 0))    # Evening
+                      c(50, 35, 10, 5, 0),   # Pre-dawn
+                      c(70, 15, 10, 5, 0),   # Morning
+                      c(30, 5, 45, 15, 5),   # Midday
+                      c(60, 25, 10, 5, 0),   # Afternoon
+                      c(75, 20, 5, 0, 0))    # Evening
 hr_defaults <- c(70, 65, 60, 55, 50, 45, 45, 50, 60, 85, 100, 90)
 
 # ---------------------------- helpers --------------------------------
@@ -195,10 +202,12 @@ simulate_herd <- function(a, tick = function() NULL) {
     pos <- H[[h0]][sample.int(nrow(H[[h0]]), 1), ]
     heading <- runif(1, 0, 2 * pi)
     beh <- sample.int(5, 1, prob = B[hl[1], ]); hab_cur <- h0; tgt <- pos; need <- TRUE
+    cnt <- matrix(0, 2, 5)                                    # fixes per habitat: row 1 wet, row 2 dry
 
     for (d in seq_len(nday)) {
       m   <- mon_all[d]
-      p   <- if (m %in% wet_idx) pw else pd
+      si  <- if (m %in% wet_idx) 1L else 2L
+      p   <- if (si == 1L) pw else pd
       Rm  <- Rm_vec[m]
       ctr <- c(sum(p * cent[, 1]), sum(p * cent[, 2]))
       Dt  <- max(0.1, rnorm(1, a$disp_m, a$disp_s))          # this day's net-displacement cap
@@ -214,7 +223,13 @@ simulate_herd <- function(a, tick = function() NULL) {
         }
         if (beh <= 2) {
           if (need || sqrt(sum((tgt - pos)^2)) < c(0.1, 0.3)[beh]) {
-            hab_cur <- sample.int(5, 1, prob = slot_probs(p, is_night, wn, wd))
+            q <- slot_probs(p, is_night, wn, wd)
+            tot <- sum(cnt[si, ])
+            if (a$gain > 0 && tot > 50) {                     # steer realized share toward the entered share
+              q <- pmax(q + a$gain * (p - cnt[si, ] / tot), 0)
+              q <- if (sum(q) > 0) q / sum(q) else p
+            }
+            hab_cur <- sample.int(5, 1, prob = q)
             tgt <- pick_target(hab_cur, pos, ctr, beh); need <- FALSE
           }
         } else if (beh == 4) {
@@ -247,6 +262,7 @@ simulate_herd <- function(a, tick = function() NULL) {
           X[i] <- pos[1] + rnorm(1, 0, 0.003); Y[i] <- pos[2] + rnorm(1, 0, 0.003)
         }
         BEH[i] <- beh; HAB[i] <- hab_cur; PER[i] <- per
+        cnt[si, hab_cur] <- cnt[si, hab_cur] + 1
       }
       i1 <- i0 + 1; i2 <- i0 + spd
       net <- sqrt((X[i2] - X[i1])^2 + (Y[i2] - Y[i1])^2)
@@ -344,7 +360,7 @@ ui <- fluidPage(
       selectInput("step_min", "Fix interval (minutes)", c(15, 30, 60, 120), selected = 60),
       numericInput("nele", "Number of elephants", 1, 1, 10, 1),
       numericInput("seed", "Random seed", 42, 1),
-      checkboxInput("force", "Force annual cropland-edge / riverine % onto seasonal habitat use", TRUE),
+      checkboxInput("force", "Rescale seasonal habitat use to the annual cropland-edge / riverine % (blurs wet vs dry)", FALSE),
       checkboxInput("rsign", "Randomise sign of mean turning angle (left/right)", TRUE),
       checkboxInput("calib", "Scale speeds so expected daily distance = mean daily distance", FALSE),
       actionButton("go", "Generate data", class = "btn-primary", width = "100%"),
@@ -362,7 +378,7 @@ ui <- fluidPage(
           ms_row("kde",   "Core area KDE 50% (km\u00b2) - between elephants", 60, 10, 1),
           ms_row("crop",  "Cropland-edge fixes (%) - between elephants", 18, 4, 1),
           ms_row("noct",  "Nocturnal cropland fixes (% of cropland fixes)", 75, 8, 1),
-          ms_row("river", "Riverine corridor use (%) - between elephants", 17, 4, 1),
+          ms_row("river", "Riverine corridor use (%) - between elephants", 20, 4, 1),
           helpText("Daily displacement SD varies from day to day. For the other SDs, each simulated elephant draws its own annual target from Normal(mean, SD)."),
           h4("Monthly home range (km\u00b2)"),
           fluidRow(lapply(1:12, function(i) column(2, numericInput(paste0("hr_", i), MONTHS[i], hr_defaults[i], min = 1))))
@@ -385,7 +401,9 @@ ui <- fluidPage(
                    numericInput("dry_grass",  "Grassland", 15, 0, 100),
                    numericInput("dry_crop",   "Cropland edge", 20, 0, 100),
                    numericInput("dry_river",  "Riverine corridor", 25, 0, 100))),
-          textOutput("scrub_txt")
+          textOutput("scrub_txt"),
+          numericInput("gain", "Habitat-use feedback strength (0 = off, higher = realized shares follow the values above more tightly)", 4, 0, 20, 0.5),
+          helpText("The wet and dry shares above are the targets for each season; the simulation steers toward them within each season. Bathing time counts as Riverine corridor, so keep bathing budgets below your riverine %. The annual cropland-edge / riverine inputs only take effect if the rescale box in the sidebar is ticked.")
         ),
         tabPanel("3 Habitat paths (map)",
           br(),
@@ -433,9 +451,12 @@ ui <- fluidPage(
           plotOutput("track", height = 580)),
         tabPanel("Targets vs realized", br(), DTOutput("valid"), br(), h4("Per elephant"), DTOutput("ele_tab")),
         tabPanel("Monthly", br(), DTOutput("monthly"), plotOutput("hr_plot", height = 300)),
-        tabPanel("Behaviour & habitat",
-          plotOutput("beh_plot", height = 340), DTOutput("beh_tab"), br(),
-          plotOutput("hab_plot", height = 300)),
+        tabPanel("Wet vs dry habitat use",
+          plotOutput("hab_month", height = 400), br(),
+          h4("Entered (target) vs realized % of fixes, by season"), DTOutput("hab_cmp"), br(),
+          plotOutput("hab_plot", height = 320)),
+        tabPanel("Behaviour",
+          plotOutput("beh_plot", height = 340), DTOutput("beh_tab")),
         tabPanel("Daily movement", plotOutput("daily_plot", height = 460)),
         tabPanel("Data", br(),
           downloadButton("dl_fix", "Fixes (CSV)"), downloadButton("dl_day", "Daily summary (CSV)"),
@@ -562,7 +583,7 @@ server <- function(input, output, session) {
       fb_lat = c(input$lat_forest, input$lat_grass, input$lat_scrub, input$lat_crop, input$lat_river),
       paths = reactiveValuesToList(rv)$paths,
       per = per_df(), B = beh_mat(), bout = sapply(1:5, function(j) input[[paste0("bout_", j)]]),
-      ffac = input$ffac, tfac = input$tfac, bf = input$bf, bt = input$bt,
+      ffac = input$ffac, tfac = input$tfac, bf = input$bf, bt = input$bt, gain = input$gain,
       rsign = input$rsign, calib = input$calib, force = input$force,
       year = input$year, step_min = as.numeric(input$step_min), nele = input$nele, seed = input$seed)
     shiny::validate(need(!anyNA(c(a$per$from, a$per$to, a$per$v, a$per$vs, a$per$tm, a$per$ts, a$B)),
@@ -670,6 +691,31 @@ server <- function(input, output, session) {
     names(t) <- c("Season", "Habitat", "Percent")
     ggplot(t, aes(Season, Percent, fill = Habitat)) + geom_col() + scale_fill_manual(values = HABCOL) +
       theme_minimal(base_size = 13) + labs(y = "% of fixes", title = "Realized habitat use by season")
+  })
+  output$hab_month <- renderPlot({
+    s <- sim(); f <- s$fixes
+    wet <- match(s$args$wet_months, MONTHS)
+    t <- as.data.frame(prop.table(table(f$month, f$habitat), 1) * 100)
+    names(t) <- c("month", "Habitat", "Percent")
+    t$month <- as.integer(as.character(t$month))
+    t$Season <- factor(ifelse(t$month %in% wet, "Wet months", "Dry months"), levels = c("Wet months", "Dry months"))
+    t$Month <- factor(MONTHS[t$month], levels = MONTHS)
+    ggplot(t, aes(Month, Percent, fill = Habitat)) + geom_col(width = 0.85) +
+      facet_grid(~Season, scales = "free_x", space = "free_x") +
+      scale_fill_manual(values = HABCOL) + theme_minimal(base_size = 13) +
+      labs(y = "% of fixes", x = NULL, title = "Habitat use in each month, wet vs dry")
+  })
+  output$hab_cmp <- renderDT({
+    s <- sim(); a <- s$args; f <- s$fixes
+    pw <- season_probs(a$wet[1], a$wet[2], a$wet[3], a$wet[4]) * 100
+    pd <- season_probs(a$dry[1], a$dry[2], a$dry[3], a$dry[4]) * 100
+    rw <- 100 * prop.table(table(factor(f$habitat[f$season == "Wet"], levels = HABS)))
+    rd <- 100 * prop.table(table(factor(f$habitat[f$season == "Dry"], levels = HABS)))
+    tab <- data.frame(Habitat = HABS,
+                      `Wet target %` = round(pw, 1), `Wet realized %` = round(as.numeric(rw), 1),
+                      `Dry target %` = round(pd, 1), `Dry realized %` = round(as.numeric(rd), 1),
+                      check.names = FALSE)
+    datatable(tab, rownames = FALSE, options = list(dom = "t"))
   })
 
   # ---- daily ----

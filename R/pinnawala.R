@@ -1,0 +1,34 @@
+#' A Day at Pinnawala Elephant Orphanage: observational movement track
+#'
+#' An observed movement track for an elephant at the
+#' Pinnawala Elephant Orphanage, Sri Lanka, covering one day from 08:30 to
+#' 17:00 at 10-minute intervals. The positions are field observations.
+#'
+#' @format A data frame with observations of elephant movement and the following variables:
+#' \describe{
+#'   \item{time}{Date and time of the observation.}
+#'   \item{latitude}{Latitude of the elephant's observed location in decimal
+#'   degrees.}
+#'   \item{longitude}{Longitude of the elephant's observed location in decimal
+#'   degrees.}
+#'   \item{note}{Either \code{"Given anchor point"} or
+#'     \code{"10-min interval (interpolated)"} (character).}
+#' }
+#'
+#' @details
+#' This dataset was created by the author for
+#' demonstration and research purposes. It is intended to illustrate the
+#' analysis and visualisation of animal movement and tracking data.
+#'
+#' The data should not be interpreted as an official wildlife monitoring
+#' dataset or as a direct GPS tracking record.
+#'
+#' @source Author-created dataset based on observations at Pinnewela
+#'
+#' @docType data
+#' @name pinnawala
+#' @usage data(pinnawala)
+#' @keywords datasets
+#' @examples
+#' data("pinnawala")
+NULL

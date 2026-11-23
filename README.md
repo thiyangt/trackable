@@ -259,3 +259,29 @@ ggplot() +
 ```
 
 <img src="man/figures/README-unnamed-chunk-7-1.png" alt="" width="100%" />
+
+Animate
+
+``` r
+library(ggplot2)
+library(ggspatial)
+library(gganimate)
+library(dplyr)
+
+trk_df <- trk_elephant |>
+  as_tibble() |>
+  arrange(datetime)
+
+p <- ggplot(trk_df, aes(longitude, latitude)) +
+  annotation_map_tile(type = "osm", zoom = 16) +
+  geom_path(colour = "red", linewidth = 0.8) +
+  geom_point(colour = "red", size = 3) +
+  coord_sf(crs = 3857, default_crs = 4326) +   # match the map tiles
+  theme_minimal() +
+  labs(
+    title = "Elephant Daily Life at Pinnewela, Sri Lanka",
+    subtitle = "Time: {format(frame_along, '%H:%M')}",
+    x = NULL, y = NULL
+  ) +
+  transition_reveal(datetime)
+```

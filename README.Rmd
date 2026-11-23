@@ -81,20 +81,30 @@ dplyr::filter(trk, animal_id == "E001")
 
 
 
-# Example with toy dataset
+## Build-in dataset
 
 ```{r}
-data(elephant_crossing_maha_oya_pinnawala)
+library(lubridate)
+data("pinnawala")
+head(pinnawala)
+pinnawala$animal_id <- rep(1, 53)
+pinnawala$datetime <- ymd_hm(
+  paste("2026-8-23", pinnawala$time),
+  tz = "Asia/Colombo"
+)
+
 trk_elephant <- trackable(
-  data = elephant_crossing_maha_oya_pinnawala,
-  time = date_time,
+  data = pinnawala,
+  time = datetime,
   x = longitude,
   y = latitude,
-  key = c("animal_id", "sex", "age_class"),
+  key = c("animal_id"),
   crs = 4326
 )
 trk_elephant
 ```
+
+
 
 ```{r}
 library(ggplot2)
@@ -103,8 +113,7 @@ ggplot() +
   geom_sf(data = trk_elephant, aes(), size = 2) +
   theme_minimal() +
   labs(
-    title = "Elephant Crossing the Maha Oya",
-    subtitle = "Pinnawala, Sri Lanka",
+    title = "Elephant Daily Life at Pinnewela, Sri Lanka",
     x = NULL,
     y = NULL
   )
@@ -117,26 +126,45 @@ library(sf)
 library(ggspatial)
 library(prettymapr)
 
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(ggspatial)
+
+
 ggplot() +
   annotation_map_tile(type = "osm", zoom = 16) +
-  geom_sf(
-    data = trk_elephant,
-    size = 2,
-    colour = "red"
-  ) +
+  geom_sf(data = trk_elephant, size = 2, colour = "red") +  
   theme_minimal() +
   labs(
-    title = "Elephant Crossing the Maha Oya",
-    subtitle = "Pinnawala, Sri Lanka",
+    title = "Elephant Daily Life at Pinnewela, Sri Lanka",
     x = NULL,
     y = NULL
   )
 ```
+```{r}
+library(sf)
+library(dplyr)
+
+# 1. plain tibble first (drops the track class), sorted by time
+trk_pts <- trk_elephant |>
+  as_tibble() |>
+  arrange(datetime)
+
+# 2. make points (skip this step if it already has a geometry column)
+trk_pts <- st_as_sf(trk_pts, coords = c("longitude", "latitude"), crs = 4326)
+
+# 3. join the points, in order, into one line
+trk_line <- trk_pts |>
+  summarise(do_union = FALSE) |>
+  st_cast("LINESTRING")
+```
 
 ```{r}
-movement_metrics(trk_elephant,
-    id = "animal_id",
-    time = "date_time",
-    lon = "longitude",
-    lat = "latitude")
+ggplot() +
+  annotation_map_tile(type = "osm", zoom = 16) +
+  geom_sf(data = trk_line, colour = "red", linewidth = 0.8) +
+  geom_sf(data = trk_pts, size = 2, colour = "red") +
+  theme_minimal() +
+  labs(title = "Elephant Daily Life at Pinnewela, Sri Lanka", x = NULL, y = NULL)
 ```

@@ -25,6 +25,7 @@ Imports:
     adehabitatHR,
     utils,
     methods,
+    tsibble,
     stats
 Suggests:
     ggplot2,

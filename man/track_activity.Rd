@@ -4,7 +4,7 @@
 \alias{track_activity}
 \title{Summarise animal movement activity over time}
 \usage{
-track_activity(x, by = "hour", ...)
+track_activity(x, by = "hour", active_threshold = 0.2, ...)
 }
 \arguments{
 \item{x}{A \code{trackable} object.}
@@ -12,25 +12,20 @@ track_activity(x, by = "hour", ...)
 \item{by}{Temporal aggregation level. One of \code{"hour"}, \code{"day"},
 \code{"week"}, \code{"month"}, or \code{"year"}.}
 
+\item{active_threshold}{Speed threshold (m/s) for identifying
+active observations. Defaults to 0.2.}
+
 \item{...}{Additional arguments.}
 }
 \value{
 A tibble containing temporal movement summaries for each
-animal, including observation count, total distance travelled,
-mean speed, maximum speed, and active observation count.
+animal.
 }
 \description{
 Calculate movement summaries for specified temporal intervals.
 }
 \details{
-This function provides an overview of temporal variation in
-movement activity. Distance is calculated from consecutive
-observed locations. The first observation in each group does
-not contribute a distance.
-}
-\examples{
-# track_activity(elephant_tracks, by = "hour")
-# track_activity(elephant_tracks, by = "day")
-# track_activity(elephant_tracks, by = "month")
-
+Distances are calculated between consecutive observed locations
+using the Haversine formula. Each movement step is assigned to
+the interval containing its destination observation.
 }

@@ -4,6 +4,7 @@
 #' distances, and displacement from the starting location.
 #' @importFrom rlang .data
 #' @importFrom stats complete.cases
+#' @importFrom dplyr n
 #' @param x A trackable object containing animal tracking observations.
 #' @param id Name of the animal identifier column.
 #' @param time Name of the date-time column.
@@ -35,10 +36,8 @@ movement_metrics <- function(
   
   # Validate coordinates
   if (!is.numeric(x[[lon]]) || !is.numeric(x[[lat]])) {
-    stop(
-      "Longitude and latitude must be numeric.",
-      call. = FALSE
-    )
+    stop("Longitude and latitude must be numeric.",
+         call. = FALSE)
   }
   
   if (any(!is.na(x[[lon]]) &
@@ -52,9 +51,10 @@ movement_metrics <- function(
     )
   }
   
+  # Validate timestamps
   if (!inherits(x[[time]], "POSIXt")) {
     stop(
-      "`time` must be a date-time column of class POSIXct or POSIXlt.",
+      "`time` must be POSIXct or POSIXlt.",
       call. = FALSE
     )
   }
@@ -73,151 +73,153 @@ movement_metrics <- function(
     )
   }
   
+  # Check dependencies
   if (!requireNamespace("geosphere", quietly = TRUE)) {
-    stop(
-      "Please install the 'geosphere' package.",
-      call. = FALSE
-    )
+    stop("Please install the 'geosphere' package.",
+         call. = FALSE)
   }
   
   if (!requireNamespace("dplyr", quietly = TRUE)) {
-    stop(
-      "Please install the 'dplyr' package.",
-      call. = FALSE
-    )
+    stop("Please install the 'dplyr' package.",
+         call. = FALSE)
   }
   
-  # Preserve original order
+  # Preserve original column names and row order
   original_names <- names(x)
-  x$.movement_row <- seq_len(nrow(x))
   
-  # Sort for calculations
-  x <- dplyr::arrange(
-    x,
-    .data[[id]],
-    .data[[time]]
-  )
+  x$.movement_row <- seq_len(nrow(x))
   
   # Calculate metrics independently for each animal
   x <- dplyr::group_by(x, .data[[id]])
   
-  x <- dplyr::mutate(
+  x <- dplyr::group_modify(
     x,
-    
-    # Previous coordinates and timestamp
-    .prev_lon = dplyr::lag(.data[[lon]]),
-    .prev_lat = dplyr::lag(.data[[lat]]),
-    .prev_time = dplyr::lag(.data[[time]]),
-    
-    # Time since previous observation, in seconds
-    elapsed_time_s = as.numeric(
-      difftime(
-        .data[[time]],
-        .data$.prev_time,
-        units = "secs"
+    function(.x, .y) {
+      
+      # Sort observations chronologically
+      z <- .x[order(.x[[time]]), , drop = FALSE]
+      
+      n <- nrow(z)
+      
+      # Current and previous coordinates
+      current <- cbind(z[[lon]], z[[lat]])
+      
+      previous <- rbind(
+        c(NA_real_, NA_real_),
+        current[-n, , drop = FALSE]
       )
-    ),
-    
-    # Distance between consecutive locations, in metres
-    step_distance_m = {
-      current <- cbind(.data[[lon]], .data[[lat]])
-      previous <- cbind(.data$.prev_lon, .data$.prev_lat)
       
-      result <- rep(NA_real_, nrow(x))
+      # Time elapsed between observations
+      previous_time <- c(
+        as.POSIXct(NA, origin = "1970-01-01",
+                   tz = "UTC"),
+        as.numeric(z[[time]][-n])
+      )
       
-      valid <- complete.cases(current, previous)
-      
-      if (any(valid)) {
-        result[valid] <- geosphere::distHaversine(
-          previous[valid, , drop = FALSE],
-          current[valid, , drop = FALSE]
+      elapsed_time_s <- as.numeric(
+        difftime(
+          z[[time]],
+          as.POSIXct(previous_time,
+                     origin = "1970-01-01",
+                     tz = "UTC"),
+          units = "secs"
         )
-      }
+      )
       
-      result
-    },
-    
-    # Speed in metres per second
-    speed_m_s = dplyr::if_else(
-      !is.na(.data$elapsed_time_s) &
-        .data$elapsed_time_s > 0 &
-        !is.na(.data$step_distance_m),
-      .data$step_distance_m / .data$elapsed_time_s,
-      NA_real_
-    ),
-    
-    # Initial bearing from previous to current location, in degrees
-    bearing_deg = {
-      current <- cbind(.data[[lon]], .data[[lat]])
-      previous <- cbind(.data$.prev_lon, .data$.prev_lat)
-      
-      result <- rep(NA_real_, nrow(x))
+      # Valid consecutive coordinate pairs
       valid <- complete.cases(current, previous)
       
+      # Step distance in metres
+      step_distance_m <- rep(NA_real_, n)
+      
       if (any(valid)) {
-        result[valid] <- geosphere::bearing(
-          previous[valid, , drop = FALSE],
-          current[valid, , drop = FALSE]
-        ) %% 360
+        step_distance_m[valid] <-
+          geosphere::distHaversine(
+            previous[valid, , drop = FALSE],
+            current[valid, , drop = FALSE]
+          )
       }
       
-      result
-    },
-    
-    # Turning angle between consecutive movement bearings
-    turn_angle_deg = {
-      change <- .data$bearing_deg -
-        dplyr::lag(.data$bearing_deg)
+      # Speed in metres per second
+      speed_m_s <- ifelse(
+        !is.na(elapsed_time_s) &
+          elapsed_time_s > 0 &
+          !is.na(step_distance_m),
+        step_distance_m / elapsed_time_s,
+        NA_real_
+      )
       
-      (change + 180) %% 360 - 180
-    },
-    
-    # Total distance travelled since the first observation
-    cumulative_distance_m = cumsum(
-      dplyr::coalesce(.data$step_distance_m, 0)
-    ),
-    
-    # Displacement from the first recorded location
-    displacement_m = {
-      first_lon <- dplyr::first(.data[[lon]])
-      first_lat <- dplyr::first(.data[[lat]])
+      # Bearing in degrees
+      bearing_deg <- rep(NA_real_, n)
       
-      current <- cbind(.data[[lon]], .data[[lat]])
+      if (any(valid)) {
+        bearing_deg[valid] <-
+          geosphere::bearing(
+            previous[valid, , drop = FALSE],
+            current[valid, , drop = FALSE]
+          ) %% 360
+      }
+      
+      # Turning angle in degrees
+      previous_bearing <- c(
+        NA_real_,
+        bearing_deg[-n]
+      )
+      
+      change <- bearing_deg - previous_bearing
+      
+      turn_angle_deg <- (change + 180) %% 360 - 180
+      
+      # Cumulative distance travelled
+      cumulative_distance_m <- cumsum(
+        dplyr::coalesce(step_distance_m, 0)
+      )
+      
+      # Displacement from first recorded location
       origin <- matrix(
-        c(first_lon, first_lat),
-        nrow = nrow(x),
+        rep(current[1, ], n),
+        nrow = n,
         ncol = 2,
         byrow = TRUE
       )
       
-      result <- rep(NA_real_, nrow(x))
-      valid <- complete.cases(current, origin)
+      displacement_m <- rep(NA_real_, n)
       
-      if (any(valid)) {
-        result[valid] <- geosphere::distHaversine(
-          origin[valid, , drop = FALSE],
-          current[valid, , drop = FALSE]
-        )
+      valid_origin <- complete.cases(current, origin)
+      
+      if (any(valid_origin)) {
+        displacement_m[valid_origin] <-
+          geosphere::distHaversine(
+            origin[valid_origin, , drop = FALSE],
+            current[valid_origin, , drop = FALSE]
+          )
       }
       
-      result
+      # Append movement metrics
+      z$elapsed_time_s <- elapsed_time_s
+      z$step_distance_m <- step_distance_m
+      z$speed_m_s <- speed_m_s
+      z$bearing_deg <- bearing_deg
+      z$turn_angle_deg <- turn_angle_deg
+      z$cumulative_distance_m <- cumulative_distance_m
+      z$displacement_m <- displacement_m
+      
+      z
     }
   )
   
+  # Restore original row order
   x <- dplyr::ungroup(x)
   
-  # Restore original row order
   x <- dplyr::arrange(x, .data$.movement_row)
   
+  # Remove internal row identifier
   x <- dplyr::select(
     x,
-    -.data$.movement_row,
-    -.data$.prev_lon,
-    -.data$.prev_lat,
-    -.data$.prev_time
+    -.data$.movement_row
   )
   
-  # Restore original column order, followed by new metrics
+  # Restore original columns, followed by metrics
   new_cols <- setdiff(names(x), original_names)
   
   x <- dplyr::select(

@@ -10,12 +10,13 @@
 #' @param ... Additional arguments.
 #'
 #' @return A tibble containing temporal movement summaries for each
-#'   animal.
+#'   animal, including observation count, total distance travelled,
+#'   mean speed, maximum speed, and active observation count.
 #'
 #' @details
-#' Distances are calculated between consecutive observed locations
-#' using the Haversine formula. Each movement step is assigned to
-#' the interval containing its destination observation.
+#' Movement distances are calculated between consecutive observed
+#' locations using the Haversine formula. Each movement step is
+#' assigned to the interval containing its destination observation.
 #'
 #' @export
 track_activity <- function(x, by = "hour",
@@ -35,56 +36,79 @@ track_activity <- function(x, by = "hour",
     active_threshold >= 0
   )
   
-  dat <- tibble::as_tibble(x)
+  # Extract trackable metadata
+  time_col <- attr(x, "trackable_time")
+  key <- attr(x, "trackable_key")
+  coords <- attr(x, "trackable_coords")
   
-  # Identify grouping variables
-  key <- attr(x, "key")
+  coord_cols <- unname(coords[c("x", "y")])
   
-  if (is.null(key)) {
-    key <- character()
+  dat <- tibble::as_tibble(sf::st_drop_geometry(x))
+  
+  # Validate columns
+  required <- c(time_col, key, coord_cols)
+  
+  missing_cols <- setdiff(required, names(dat))
+  
+  if (length(missing_cols) > 0) {
+    stop(
+      "Missing required columns: ",
+      paste(missing_cols, collapse = ", ")
+    )
   }
   
-  
-  # Calculate movement metrics
+  # Calculate movement distances and speeds
   dat <- dat |>
     dplyr::arrange(
       dplyr::across(dplyr::all_of(key)),
-      time
+      .data[[time_col]]
     ) |>
     dplyr::group_by(
       dplyr::across(dplyr::all_of(key))
     ) |>
     dplyr::mutate(
-      .distance_m = geosphere::distHaversine(
-        cbind(dplyr::lag(x), dplyr::lag(y)),
-        cbind(x, y)
+      .previous_time = dplyr::lag(.data[[time_col]]),
+      
+      .time_diff = as.numeric(
+        difftime(
+          .data[[time_col]],
+          .previous_time,
+          units = "secs"
+        )
       ),
+      
+      .distance_m = geosphere::distHaversine(
+        cbind(
+          dplyr::lag(.data[[coord_cols[1]]]),
+          dplyr::lag(.data[[coord_cols[2]]])
+        ),
+        cbind(
+          .data[[coord_cols[1]]],
+          .data[[coord_cols[2]]]
+        )
+      ),
+      
       .distance_m = dplyr::if_else(
-        is.na(dplyr::lag(time)) |
-          as.numeric(difftime(
-            time, dplyr::lag(time), units = "secs"
-          )) <= 0,
+        is.na(.time_diff) | .time_diff <= 0,
         NA_real_,
         .distance_m
       ),
-      .time_diff = as.numeric(
-        difftime(time, dplyr::lag(time), units = "secs")
-      ),
+      
       .speed_m_s = .distance_m / .time_diff
     ) |>
     dplyr::ungroup()
   
-  # Define temporal intervals
+  # Create temporal intervals
   dat$.period <- switch(
     by,
-    hour = lubridate::floor_date(dat$time, "hour"),
-    day = lubridate::floor_date(dat$time, "day"),
-    week = lubridate::floor_date(dat$time, "week"),
-    month = lubridate::floor_date(dat$time, "month"),
-    year = lubridate::floor_date(dat$time, "year")
+    hour = lubridate::floor_date(dat[[time_col]], "hour"),
+    day = lubridate::floor_date(dat[[time_col]], "day"),
+    week = lubridate::floor_date(dat[[time_col]], "week"),
+    month = lubridate::floor_date(dat[[time_col]], "month"),
+    year = lubridate::floor_date(dat[[time_col]], "year")
   )
   
-  # Aggregate movement activity
+  # Summarise activity
   dat |>
     dplyr::group_by(
       dplyr::across(
@@ -95,23 +119,24 @@ track_activity <- function(x, by = "hour",
       n_observations = dplyr::n(),
       
       total_distance_m = sum(
-        .distance_m, na.rm = TRUE
+        .data$.distance_m,
+        na.rm = TRUE
       ),
       
-      mean_speed_m_s = if (all(is.na(.speed_m_s))) {
+      mean_speed_m_s = if (all(is.na(.data$.speed_m_s))) {
         NA_real_
       } else {
-        mean(.speed_m_s, na.rm = TRUE)
+        mean(.data$.speed_m_s, na.rm = TRUE)
       },
       
-      max_speed_m_s = if (all(is.na(.speed_m_s))) {
+      max_speed_m_s = if (all(is.na(.data$.speed_m_s))) {
         NA_real_
       } else {
-        max(.speed_m_s, na.rm = TRUE)
+        max(.data$.speed_m_s, na.rm = TRUE)
       },
       
       active_observations = sum(
-        .speed_m_s > active_threshold,
+        .data$.speed_m_s > active_threshold,
         na.rm = TRUE
       ),
       

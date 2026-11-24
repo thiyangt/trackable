@@ -19,13 +19,14 @@ active observations. Defaults to 0.2.}
 }
 \value{
 A tibble containing temporal movement summaries for each
-animal.
+animal, including observation count, total distance travelled,
+mean speed, maximum speed, and active observation count.
 }
 \description{
 Calculate movement summaries for specified temporal intervals.
 }
 \details{
-Distances are calculated between consecutive observed locations
-using the Haversine formula. Each movement step is assigned to
-the interval containing its destination observation.
+Movement distances are calculated between consecutive observed
+locations using the Haversine formula. Each movement step is
+assigned to the interval containing its destination observation.
 }

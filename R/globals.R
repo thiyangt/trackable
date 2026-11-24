@@ -29,5 +29,7 @@ utils::globalVariables(c(
   ".track_distance",
   ".track_find_analogues",
   ".track_forecast_prepare",
-  "animal_id"
+  "animal_id",
+  ".previous_time",
+  ".time_diff"
 ))

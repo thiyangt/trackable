@@ -31,5 +31,6 @@ utils::globalVariables(c(
   ".track_forecast_prepare",
   "animal_id",
   ".previous_time",
-  ".time_diff"
+  ".time_diff",
+  ".step_m"
 ))

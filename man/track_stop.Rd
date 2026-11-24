@@ -16,34 +16,32 @@ track_stop(
 \arguments{
 \item{x}{A \code{trackable} object.}
 
-\item{speed_threshold}{Maximum speed (metres per second) considered
-low movement. Defaults to 0.2 m/s.}
+\item{speed_threshold}{Maximum speed in metres per second.
+Defaults to 0.2.}
 
-\item{min_duration}{Minimum duration of a stopping period, in seconds.
-Defaults to 1800 seconds (30 minutes).}
+\item{min_duration}{Minimum stopping duration in seconds.
+Defaults to 1800 (30 minutes).}
 
-\item{radius}{Maximum spatial displacement from the first location
-in a stopping period, in metres. Defaults to 50 metres.}
+\item{radius}{Maximum displacement from the first location
+in a stopping period, in metres. Defaults to 50.}
 
-\item{max_gap}{Maximum allowable time between consecutive observations,
+\item{max_gap}{Maximum time between consecutive observations,
 in seconds. Larger gaps terminate a stopping period.}
 
 \item{...}{Additional arguments.}
 }
 \value{
-A tibble containing detected stopping periods, including
-animal identifiers, start and end times, duration, number of
-observations, and spatial displacement.
+A tibble containing detected stopping periods.
 }
 \description{
-Identify periods during which an animal exhibits low movement for a
-specified minimum duration. A stopping period is identified using
-consecutive observations with speeds below a specified threshold.
+Identify periods during which an animal exhibits low movement
+for a specified minimum duration.
 }
 \details{
-Stopping periods are identified from consecutive low-speed
-observations. A candidate stop must satisfy both the minimum
-duration and spatial displacement criteria.
+Stopping periods are identified using consecutive observations
+with speeds below the specified threshold. Candidate periods
+must satisfy both the minimum duration and spatial displacement
+criteria.
 
 A stopping period does not necessarily indicate resting or sleeping.
 }

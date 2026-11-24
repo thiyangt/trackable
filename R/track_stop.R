@@ -1,28 +1,26 @@
 #' Detect stopping periods in animal movement tracks
 #'
-#' Identify periods during which an animal exhibits low movement for a
-#' specified minimum duration. A stopping period is identified using
-#' consecutive observations with speeds below a specified threshold.
+#' Identify periods during which an animal exhibits low movement
+#' for a specified minimum duration.
 #'
 #' @param x A `trackable` object.
-#' @param speed_threshold Maximum speed (metres per second) considered
-#'   low movement. Defaults to 0.2 m/s.
-#' @param min_duration Minimum duration of a stopping period, in seconds.
-#'   Defaults to 1800 seconds (30 minutes).
-#' @param radius Maximum spatial displacement from the first location
-#'   in a stopping period, in metres. Defaults to 50 metres.
-#' @param max_gap Maximum allowable time between consecutive observations,
+#' @param speed_threshold Maximum speed in metres per second.
+#'   Defaults to 0.2.
+#' @param min_duration Minimum stopping duration in seconds.
+#'   Defaults to 1800 (30 minutes).
+#' @param radius Maximum displacement from the first location
+#'   in a stopping period, in metres. Defaults to 50.
+#' @param max_gap Maximum time between consecutive observations,
 #'   in seconds. Larger gaps terminate a stopping period.
 #' @param ... Additional arguments.
 #'
-#' @return A tibble containing detected stopping periods, including
-#'   animal identifiers, start and end times, duration, number of
-#'   observations, and spatial displacement.
+#' @return A tibble containing detected stopping periods.
 #'
 #' @details
-#' Stopping periods are identified from consecutive low-speed
-#' observations. A candidate stop must satisfy both the minimum
-#' duration and spatial displacement criteria.
+#' Stopping periods are identified using consecutive observations
+#' with speeds below the specified threshold. Candidate periods
+#' must satisfy both the minimum duration and spatial displacement
+#' criteria.
 #'
 #' A stopping period does not necessarily indicate resting or sleeping.
 #'
@@ -32,6 +30,7 @@
 #' #            min_duration = 3600)
 #'
 #' @export
+
 track_stop <- function(x,
                        speed_threshold = 0.2,
                        min_duration = 1800,
@@ -41,57 +40,94 @@ track_stop <- function(x,
   
   stopifnot(inherits(x, "trackable"))
   
-  dat <- .track_metrics(x)
+  time_col <- attr(x, "trackable_time")
+  key <- attr(x, "trackable_key")
+  coords <- attr(x, "trackable_coords")
   
-  key <- x$key
-  if (is.null(key) || length(key) == 0) {
-    key <- character()
-  }
+  lon_col <- coords["x"]
+  lat_col <- coords["y"]
   
-  dat <- dat |>
-    dplyr::arrange(dplyr::across(dplyr::all_of(c(key, ".time"))))
-  
-  group_cols <- c(key)
+  dat <- tibble::as_tibble(x)
   
   dat <- dat |>
-    dplyr::group_by(dplyr::across(dplyr::all_of(group_cols))) |>
+    dplyr::arrange(
+      dplyr::across(
+        dplyr::all_of(c(key, time_col))
+      )
+    ) |>
+    dplyr::group_by(
+      dplyr::across(dplyr::all_of(key))
+    ) |>
     dplyr::mutate(
+      .elapsed_s = as.numeric(
+        difftime(
+          .data[[time_col]],
+          dplyr::lag(.data[[time_col]]),
+          units = "secs"
+        )
+      ),
+      
+      .step_m = geosphere::distHaversine(
+        cbind(
+          dplyr::lag(.data[[lon_col]]),
+          dplyr::lag(.data[[lat_col]])
+        ),
+        cbind(
+          .data[[lon_col]],
+          .data[[lat_col]]
+        )
+      ),
+      
+      .speed_m_s = .step_m / .elapsed_s,
+      
       .low = !is.na(.speed_m_s) &
-        .speed_m_s <= speed_threshold &
-        .elapsed_s <= max_gap,
-      .run = cumsum(.low != dplyr::lag(.low, default = FALSE))
+        .elapsed_s > 0 &
+        .elapsed_s <= max_gap &
+        .speed_m_s <= speed_threshold,
+      
+      .run = cumsum(
+        .low != dplyr::lag(.low, default = FALSE)
+      )
     ) |>
     dplyr::ungroup()
   
-  dat <- dat |>
+  dat |>
     dplyr::filter(.low) |>
-    dplyr::group_by(dplyr::across(
-      dplyr::all_of(c(key, ".run"))
-    )) |>
+    dplyr::group_by(
+      dplyr::across(
+        dplyr::all_of(c(key, ".run"))
+      )
+    ) |>
     dplyr::summarise(
-      start_time = min(.time),
-      end_time = max(.time),
+      start_time = min(.data[[time_col]]),
+      end_time = max(.data[[time_col]]),
+      
       duration = as.numeric(
         difftime(end_time, start_time, units = "secs")
       ),
+      
       n_observations = dplyr::n(),
-      displacement = {
-        idx <- dplyr::first(dplyr::row_number())
-        dx <- .x <- dplyr::first(.longitude)
-        dy <- dplyr::first(.latitude)
-        .distance_from_start <- .track_distance(
-          dx, dy, .data$.longitude, .data$.latitude
-        )
-        max(.distance_from_start, na.rm = TRUE)
-      },
+      
+      displacement = max(
+        geosphere::distHaversine(
+          cbind(
+            dplyr::first(.data[[lon_col]]),
+            dplyr::first(.data[[lat_col]])
+          ),
+          cbind(
+            .data[[lon_col]],
+            .data[[lat_col]]
+          )
+        ),
+        na.rm = TRUE
+      ),
+      
       .groups = "drop"
     ) |>
     dplyr::filter(
       duration >= min_duration,
       displacement <= radius
     ) |>
-    dplyr::select(-.run)
-  
-  tibble::as_tibble(dat)
+    dplyr::select(-.run) |>
+    tibble::as_tibble()
 }
-

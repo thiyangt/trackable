@@ -6,6 +6,7 @@
 #' @param .data A trackable object.
 #' @param n Number of most recent observations used for forecasting.
 #' @param horizon Forecast horizon in hours. Defaults to 1.
+#' @importFrom tibble tibble
 #'
 #' @return A tibble containing the predicted location and forecast time.
 #'

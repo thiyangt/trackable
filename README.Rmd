@@ -194,3 +194,42 @@ p <- ggplot(trk_df, aes(longitude, latitude)) +
   ) +
   transition_reveal(datetime)
 ```
+
+## trackable_line
+
+`trackable_lines()` function that converts the point-based trackable object into an sf LINESTRING object.
+
+```{r}
+# Create point-based trackable object
+trk <- trackable(
+  data = dat,
+  time = time,
+  x = x,
+  y = y,
+  key = c("animal_id", "Length", "Sex"),
+  crs = 4326
+)
+
+# Convert points into trajectories
+trk_line <- trackable_lines(trk)
+
+# Inspect
+trk_line
+
+# View geometry
+sf::st_geometry(trk_line)
+
+# Plot trajectories
+library(ggplot2)
+
+ggplot(trk_line) +
+  geom_sf(aes(colour = animal_id), linewidth = 1) +
+  theme_minimal()
+```
+
+```{r}
+track_lines_pinnewela <- trackable_lines(trk_elephant)
+ggplot(track_lines_pinnewela) +
+  geom_sf(aes(colour = animal_id), linewidth = 1) +
+  theme_minimal()
+```

@@ -21,13 +21,18 @@ Imports:
     sf,
     tibble,
     geosphere,
-    adehabitatHR
+    concaveman,
+    adehabitatHR,
+    utils,
+    methods,
+    stats
 Suggests:
     ggplot2,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
-    sp
+    sp, 
+    tibble
 Depends: 
     R (>= 3.5)
 LazyData: true

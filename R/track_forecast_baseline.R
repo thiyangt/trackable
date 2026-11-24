@@ -11,7 +11,8 @@
 #' @return A tibble containing the predicted location and forecast time.
 #'
 #' @examples
-#' elephant_tibble <- tibble(
+#' library(tibble)
+#' elephant_tibble <- tibble::tibble(
 #' animal_id = "E001",
 #' time = as.POSIXct("2026-11-18 06:00:00") +
 #'    (0:4) * 3600,

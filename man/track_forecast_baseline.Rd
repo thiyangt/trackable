@@ -21,7 +21,7 @@ Forecast the next location of an animal using its recent
 movement history.
 }
 \examples{
-elephant_tibble <- tibble(
+elephant_tibble <- tibble::tibble(
 animal_id = "E001",
 time = as.POSIXct("2026-11-18 06:00:00") +
    (0:4) * 3600,

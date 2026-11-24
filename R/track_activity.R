@@ -38,8 +38,12 @@ track_activity <- function(x, by = "hour",
   dat <- tibble::as_tibble(x)
   
   # Identify grouping variables
-  key <- x$key
-  if (is.null(key)) key <- character()
+  key <- attr(x, "key")
+  
+  if (is.null(key)) {
+    key <- character()
+  }
+  
   
   # Calculate movement metrics
   dat <- dat |>

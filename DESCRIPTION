@@ -1,6 +1,6 @@
 Package: trackable
 Title: Tidy Data Structure for Storing, Handling and Analyzing Animal Tracking Data
-Version: 0.0.1
+Version: 1.0.0
 Authors@R:
     person(
       "Thiyanga S.",

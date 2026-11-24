@@ -249,3 +249,10 @@ elephant_track <- trackable(data = elephant_tibble,
 time = time, x=x, y=y, crs = 4326, key = animal_id)
 track_forecast_baseline(elephant_track)
 ```
+
+## Track activity
+
+```{r}
+track_activity(trk, by="hour")
+track_activity(trk, by="month")
+```

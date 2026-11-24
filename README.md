@@ -226,9 +226,6 @@ ggplot() +
     y = NULL
   )
 #> Zoom: 16
-#> Fetching 2 missing tiles
-#>   |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
-#> ...complete!
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />
@@ -371,4 +368,24 @@ track_forecast_baseline(elephant_track)
 #>   animal_id time                     x      y
 #>   <chr>     <dttm>               <dbl>  <dbl>
 #> 1 E001      2026-11-18 11:00:00 500665 850225
+```
+
+## Track activity
+
+``` r
+track_activity(trk, by="hour")
+#> # A tibble: 4 × 6
+#>   period              n_observations total_distance_m mean_speed_m_s
+#>   <dttm>                       <int>            <dbl>          <dbl>
+#> 1 2022-01-01 08:00:00              3               0         NA     
+#> 2 2022-01-02 08:00:00              3            8778.         0.102 
+#> 3 2022-01-03 08:00:00              3           13175.         0.152 
+#> 4 2022-01-04 08:00:00              3            5998.         0.0694
+#> # ℹ 2 more variables: max_speed_m_s <dbl>, active_observations <int>
+track_activity(trk, by="month")
+#> # A tibble: 1 × 6
+#>   period              n_observations total_distance_m mean_speed_m_s
+#>   <dttm>                       <int>            <dbl>          <dbl>
+#> 1 2022-01-01 00:00:00             12           27952.          0.108
+#> # ℹ 2 more variables: max_speed_m_s <dbl>, active_observations <int>
 ```

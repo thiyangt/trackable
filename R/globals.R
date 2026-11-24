@@ -22,5 +22,11 @@ utils::globalVariables(c(
   "x",
   "y",
   "distance",
-  "duration"
+  "duration",
+  ".track_metrics",
+  "track_forecast_prepare",
+  "track_stop",
+  ".track_distance",
+  ".track_find_analogues",
+  ".track_forecast_prepare"
 ))

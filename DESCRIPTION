@@ -31,8 +31,7 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
-    sp, 
-    tibble
+    sp
 Depends: 
     R (>= 3.5)
 LazyData: true

@@ -1,4 +1,4 @@
-.track_find_analogues <- function(.data,
+track_find_analogues <- function(.data,
                                   horizon = 1,
                                   radius = 100,
                                   time_tolerance = 0.25,

@@ -1,5 +1,5 @@
 # Internal helper to prepare movement data
-.track_forecast_prepare <- function(.data, n = 5) {
+track_forecast_prepare <- function(.data, n = 5) {
   
   required <- c("animal_id", "time", "x", "y")
   

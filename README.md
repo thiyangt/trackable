@@ -226,6 +226,9 @@ ggplot() +
     y = NULL
   )
 #> Zoom: 16
+#> Fetching 2 missing tiles
+#>   |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+#> ...complete!
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />
@@ -284,4 +287,88 @@ p <- ggplot(trk_df, aes(longitude, latitude)) +
     x = NULL, y = NULL
   ) +
   transition_reveal(datetime)
+```
+
+## trackable_line
+
+`trackable_lines()` function that converts the point-based trackable
+object into an sf LINESTRING object.
+
+``` r
+# Create point-based trackable object
+trk <- trackable(
+  data = dat,
+  time = time,
+  x = x,
+  y = y,
+  key = c("animal_id", "Length", "Sex"),
+  crs = 4326
+)
+
+# Convert points into trajectories
+trk_line <- trackable_lines(trk)
+
+# Inspect
+trk_line
+#> Simple feature collection with 3 features and 6 fields
+#> Geometry type: LINESTRING
+#> Dimension:     XY
+#> Bounding box:  xmin: 80.70911 ymin: 7.808412 xmax: 80.89137 ymax: 7.998854
+#> Geodetic CRS:  WGS 84
+#> # A tibble: 3 × 7
+#>   animal_id Length Sex    start_time          end_time            n_obs
+#>   <chr>      <dbl> <chr>  <dttm>              <dttm>              <int>
+#> 1 E001         250 Female 2022-01-01 08:00:00 2022-01-04 08:00:00     4
+#> 2 E002         270 Male   2022-01-01 08:00:00 2022-01-04 08:00:00     4
+#> 3 E003         250 Female 2022-01-01 08:00:00 2022-01-04 08:00:00     4
+#> # ℹ 1 more variable: geometry <LINESTRING [°]>
+
+# View geometry
+sf::st_geometry(trk_line)
+#> Geometry set for 3 features 
+#> Geometry type: LINESTRING
+#> Dimension:     XY
+#> Bounding box:  xmin: 80.70911 ymin: 7.808412 xmax: 80.89137 ymax: 7.998854
+#> Geodetic CRS:  WGS 84
+#> LINESTRING (80.75752 7.935514, 80.85766 7.91452...
+#> LINESTRING (80.88809 7.849218, 80.70911 7.80841...
+#> LINESTRING (80.81029 7.977908, 80.79132 7.93856...
+
+# Plot trajectories
+library(ggplot2)
+
+ggplot(trk_line) +
+  geom_sf(aes(colour = animal_id), linewidth = 1) +
+  theme_minimal()
+```
+
+<img src="man/figures/README-unnamed-chunk-9-1.png" alt="" width="100%" />
+
+``` r
+track_lines_pinnewela <- trackable_lines(trk_elephant)
+ggplot(track_lines_pinnewela) +
+  geom_sf(aes(colour = animal_id), linewidth = 1) +
+  theme_minimal()
+```
+
+<img src="man/figures/README-unnamed-chunk-10-1.png" alt="" width="100%" />
+
+## Forecast
+
+``` r
+library(tibble)
+elephant_tibble <- tibble::tibble(
+ animal_id = "E001",
+ time = as.POSIXct("2026-11-18 06:00:00") +
+    (0:4) * 3600,
+ x = c(500000, 500120, 500260, 500390, 500530),
+ y = c(850000, 850040, 850090, 850130, 850180)
+ )
+elephant_track <- trackable(data = elephant_tibble,
+time = time, x=x, y=y, crs = 4326, key = animal_id)
+track_forecast_baseline(elephant_track)
+#> # A tibble: 1 × 4
+#>   animal_id time                     x      y
+#>   <chr>     <dttm>               <dbl>  <dbl>
+#> 1 E001      2026-11-18 11:00:00 500665 850225
 ```

@@ -10,6 +10,8 @@ track_bursts(
   quantile = NULL,
   min_duration = 60,
   max_gap = Inf,
+  time = NULL,
+  coords = NULL,
   ...
 )
 }
@@ -28,6 +30,15 @@ in seconds. Defaults to 60 seconds.}
 
 \item{max_gap}{Maximum allowable time between consecutive
 observations, in seconds.}
+
+\item{time}{Optional character string specifying the name of
+the time column. Defaults to the time index stored in the
+\code{trackable} object.}
+
+\item{coords}{Optional character vector specifying the names
+of the two coordinate columns (longitude and latitude).
+Defaults to the coordinate columns stored in the
+\code{trackable} object.}
 
 \item{...}{Additional arguments.}
 }

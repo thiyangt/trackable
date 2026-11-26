@@ -8,6 +8,13 @@
 #' @param active_threshold Speed threshold (m/s) for identifying
 #'   active observations. Defaults to 0.2.
 #' @param ... Additional arguments.
+#' @param time Optional character string specifying the name of
+#'   the time column. Defaults to the time index stored in the
+#'   `trackable` object.
+#' @param coords Optional character vector specifying the names
+#'   of the two coordinate columns (longitude and latitude).
+#'   Defaults to the coordinate columns stored in the
+#'   `trackable` object.
 #'
 #' @return A tibble containing temporal movement summaries for each
 #'   animal, including observation count, total distance travelled,
@@ -19,34 +26,51 @@
 #' assigned to the interval containing its destination observation.
 #'
 #' @export
-track_activity <- function(x, by = "hour",
-                           active_threshold = 0.2, ...) {
+track_activity <- function(x,
+                           by = "hour",
+                           active_threshold = 0.2,
+                           time = NULL,
+                           coords = NULL,
+                           ...) {
   
   stopifnot(inherits(x, "trackable"))
   
+  # Validate arguments
   by <- match.arg(
     by,
     c("hour", "day", "week", "month", "year")
   )
   
-  stopifnot(
-    is.numeric(active_threshold),
-    length(active_threshold) == 1L,
-    is.finite(active_threshold),
-    active_threshold >= 0
-  )
+  if (!is.numeric(active_threshold) ||
+      length(active_threshold) != 1L ||
+      !is.finite(active_threshold) ||
+      active_threshold < 0) {
+    stop("`active_threshold` must be a non-negative number.")
+  }
   
   # Extract trackable metadata
-  time_col <- attr(x, "trackable_time")
+  if (is.null(time)) {
+    time <- attr(x, "trackable_time")
+  }
+  
   key <- attr(x, "trackable_key")
-  coords <- attr(x, "trackable_coords")
+  coords_meta <- attr(x, "trackable_coords")
   
-  coord_cols <- unname(coords[c("x", "y")])
+  if (is.null(coords)) {
+    coords <- unname(coords_meta[c("x", "y")])
+  }
   
-  dat <- tibble::as_tibble(sf::st_drop_geometry(x))
+  if (is.null(key)) {
+    key <- character()
+  }
+  
+  # Extract data
+  dat <- tibble::as_tibble(
+    sf::st_drop_geometry(x)
+  )
   
   # Validate columns
-  required <- c(time_col, key, coord_cols)
+  required <- c(time, key, coords)
   
   missing_cols <- setdiff(required, names(dat))
   
@@ -57,21 +81,25 @@ track_activity <- function(x, by = "hour",
     )
   }
   
-  # Calculate movement distances and speeds
+  if (length(coords) != 2L) {
+    stop("`coords` must contain two coordinate column names.")
+  }
+  
+  # Calculate movement metrics
   dat <- dat |>
     dplyr::arrange(
       dplyr::across(dplyr::all_of(key)),
-      .data[[time_col]]
+      .data[[time]]
     ) |>
     dplyr::group_by(
       dplyr::across(dplyr::all_of(key))
     ) |>
     dplyr::mutate(
-      .previous_time = dplyr::lag(.data[[time_col]]),
+      .previous_time = dplyr::lag(.data[[time]]),
       
-      .time_diff = as.numeric(
+      .elapsed_s = as.numeric(
         difftime(
-          .data[[time_col]],
+          .data[[time]],
           .previous_time,
           units = "secs"
         )
@@ -79,33 +107,29 @@ track_activity <- function(x, by = "hour",
       
       .distance_m = geosphere::distHaversine(
         cbind(
-          dplyr::lag(.data[[coord_cols[1]]]),
-          dplyr::lag(.data[[coord_cols[2]]])
+          dplyr::lag(.data[[coords[1]]]),
+          dplyr::lag(.data[[coords[2]]])
         ),
         cbind(
-          .data[[coord_cols[1]]],
-          .data[[coord_cols[2]]]
+          .data[[coords[1]]],
+          .data[[coords[2]]]
         )
       ),
       
       .distance_m = dplyr::if_else(
-        is.na(.time_diff) | .time_diff <= 0,
+        is.na(.elapsed_s) | .elapsed_s <= 0,
         NA_real_,
         .distance_m
       ),
       
-      .speed_m_s = .distance_m / .time_diff
+      .speed_m_s = .distance_m / .elapsed_s
     ) |>
     dplyr::ungroup()
   
   # Create temporal intervals
-  dat$.period <- switch(
-    by,
-    hour = lubridate::floor_date(dat[[time_col]], "hour"),
-    day = lubridate::floor_date(dat[[time_col]], "day"),
-    week = lubridate::floor_date(dat[[time_col]], "week"),
-    month = lubridate::floor_date(dat[[time_col]], "month"),
-    year = lubridate::floor_date(dat[[time_col]], "year")
+  dat$.period <- lubridate::floor_date(
+    dat[[time]],
+    unit = by
   )
   
   # Summarise activity
@@ -119,24 +143,24 @@ track_activity <- function(x, by = "hour",
       n_observations = dplyr::n(),
       
       total_distance_m = sum(
-        .data$.distance_m,
+        .distance_m,
         na.rm = TRUE
       ),
       
-      mean_speed_m_s = if (all(is.na(.data$.speed_m_s))) {
+      mean_speed_m_s = if (all(is.na(.speed_m_s))) {
         NA_real_
       } else {
-        mean(.data$.speed_m_s, na.rm = TRUE)
+        mean(.speed_m_s, na.rm = TRUE)
       },
       
-      max_speed_m_s = if (all(is.na(.data$.speed_m_s))) {
+      max_speed_m_s = if (all(is.na(.speed_m_s))) {
         NA_real_
       } else {
-        max(.data$.speed_m_s, na.rm = TRUE)
+        max(.speed_m_s, na.rm = TRUE)
       },
       
       active_observations = sum(
-        .data$.speed_m_s > active_threshold,
+        .speed_m_s > active_threshold,
         na.rm = TRUE
       ),
       

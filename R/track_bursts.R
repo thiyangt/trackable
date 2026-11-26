@@ -13,6 +13,13 @@
 #'   in seconds. Defaults to 60 seconds.
 #' @param max_gap Maximum allowable time between consecutive
 #'   observations, in seconds.
+#' @param time Optional character string specifying the name of
+#'   the time column. Defaults to the time index stored in the
+#'   `trackable` object.
+#' @param coords Optional character vector specifying the names
+#'   of the two coordinate columns (longitude and latitude).
+#'   Defaults to the coordinate columns stored in the
+#'   `trackable` object.
 #' @param ... Additional arguments.
 #'
 #' @return A tibble containing rapid movement episodes, with animal
@@ -34,6 +41,8 @@ track_bursts <- function(x,
                          quantile = NULL,
                          min_duration = 60,
                          max_gap = Inf,
+                         time = NULL,
+                         coords = NULL,
                          ...) {
   
   stopifnot(inherits(x, "trackable"))
@@ -44,13 +53,44 @@ track_bursts <- function(x,
     stop("`quantile` must be between 0 and 1.")
   }
   
-  dat <- .track_metrics(x)
+  if (is.null(time)) {
+    time <- x$index
+  }
+  
+  if (is.null(coords)) {
+    coords <- c("x", "y")
+  }
   
   key <- x$key
   if (is.null(key)) key <- character()
   
-  dat <- dat |>
-    dplyr::group_by(dplyr::across(dplyr::all_of(key))) 
+  dat <- tibble::as_tibble(x) |>
+    dplyr::arrange(dplyr::across(
+      dplyr::all_of(c(key, time))
+    )) |>
+    dplyr::group_by(dplyr::across(
+      dplyr::all_of(key)
+    )) |>
+    dplyr::mutate(
+      .elapsed_s = as.numeric(
+        difftime(
+          .data[[time]],
+          dplyr::lag(.data[[time]]),
+          units = "secs"
+        )
+      ),
+      .distance_m = geosphere::distGeo(
+        cbind(
+          .data[[coords[1]]],
+          .data[[coords[2]]]
+        ),
+        cbind(
+          dplyr::lag(.data[[coords[1]]]),
+          dplyr::lag(.data[[coords[2]]])
+        )
+      ),
+      .speed_m_s = .distance_m / .elapsed_s
+    )
   
   if (!is.null(quantile)) {
     dat <- dat |>
@@ -81,8 +121,8 @@ track_bursts <- function(x,
       dplyr::all_of(c(key, ".run"))
     )) |>
     dplyr::summarise(
-      start_time = min(.time),
-      end_time = max(.time),
+      start_time = min(.data[[time]]),
+      end_time = max(.data[[time]]),
       duration = as.numeric(
         difftime(end_time, start_time, units = "secs")
       ),

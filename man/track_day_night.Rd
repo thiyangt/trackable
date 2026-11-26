@@ -4,7 +4,15 @@
 \alias{track_day_night}
 \title{Compare daytime and nighttime animal movement}
 \usage{
-track_day_night(x, day_start = 6, night_start = 18, tz = NULL, ...)
+track_day_night(
+  x,
+  day_start = 6,
+  night_start = 18,
+  tz = NULL,
+  time = NULL,
+  coords = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{trackable} object.}
@@ -16,6 +24,15 @@ clock time. Defaults to 6.}
 
 \item{tz}{Time zone used to determine local clock time.
 Defaults to the time zone of the tracking timestamps.}
+
+\item{time}{Optional character string specifying the name of
+the time column. Defaults to the time index stored in the
+\code{trackable} object.}
+
+\item{coords}{Optional character vector specifying the names
+of the two coordinate columns (longitude and latitude).
+Defaults to the coordinate columns stored in the
+\code{trackable} object.}
 
 \item{...}{Additional arguments.}
 }

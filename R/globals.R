@@ -32,5 +32,7 @@ utils::globalVariables(c(
   "animal_id",
   ".previous_time",
   ".time_diff",
-  ".step_m"
+  ".step_m",
+  "elapsed_s",
+  "distance_m"
 ))

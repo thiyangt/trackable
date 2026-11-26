@@ -4,7 +4,14 @@
 \alias{track_seasonality}
 \title{Examine seasonal variation in animal movement}
 \usage{
-track_seasonality(x, by = "season", seasons = NULL, ...)
+track_seasonality(
+  x,
+  by = "season",
+  seasons = NULL,
+  time = NULL,
+  coords = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{trackable} object.}
@@ -15,6 +22,15 @@ track_seasonality(x, by = "season", seasons = NULL, ...)
 \item{seasons}{Optional named list defining the months
 associated with each season. Each element should contain
 integer month numbers from 1 to 12.}
+
+\item{time}{Optional character string specifying the name of
+the time column. Defaults to the time index stored in the
+\code{trackable} object.}
+
+\item{coords}{Optional character vector specifying the names
+of the two coordinate columns (longitude and latitude).
+Defaults to the coordinate columns stored in the
+\code{trackable} object.}
 
 \item{...}{Additional arguments.}
 }

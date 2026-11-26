@@ -4,7 +4,14 @@
 \alias{track_behaviour}
 \title{Classify candidate animal movement states}
 \usage{
-track_behaviour(x, stop_threshold = 0.2, travel_threshold = 1, ...)
+track_behaviour(
+  x,
+  stop_threshold = 0.2,
+  travel_threshold = 1,
+  time = NULL,
+  coords = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{trackable} object.}
@@ -14,6 +21,15 @@ classifying an observation as stationary. Defaults to 0.2.}
 
 \item{travel_threshold}{Minimum speed (metres per second)
 for classifying an observation as travelling. Defaults to 1.}
+
+\item{time}{Optional character string specifying the name of
+the time column. Defaults to the time index stored in the
+\code{trackable} object.}
+
+\item{coords}{Optional character vector specifying the names
+of the two coordinate columns (longitude and latitude).
+Defaults to the coordinate columns stored in the
+\code{trackable} object.}
 
 \item{...}{Additional arguments.}
 }

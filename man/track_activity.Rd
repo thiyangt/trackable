@@ -4,7 +4,14 @@
 \alias{track_activity}
 \title{Summarise animal movement activity over time}
 \usage{
-track_activity(x, by = "hour", active_threshold = 0.2, ...)
+track_activity(
+  x,
+  by = "hour",
+  active_threshold = 0.2,
+  time = NULL,
+  coords = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{trackable} object.}
@@ -14,6 +21,15 @@ track_activity(x, by = "hour", active_threshold = 0.2, ...)
 
 \item{active_threshold}{Speed threshold (m/s) for identifying
 active observations. Defaults to 0.2.}
+
+\item{time}{Optional character string specifying the name of
+the time column. Defaults to the time index stored in the
+\code{trackable} object.}
+
+\item{coords}{Optional character vector specifying the names
+of the two coordinate columns (longitude and latitude).
+Defaults to the coordinate columns stored in the
+\code{trackable} object.}
 
 \item{...}{Additional arguments.}
 }

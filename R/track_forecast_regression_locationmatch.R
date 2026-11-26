@@ -7,19 +7,42 @@
 #'
 #' @return Predicted animal location.
 #' @export
-track_forecast_regression_locationmatch <- function(.data,
-                                 horizon = 1,
-                                 radius = 100,
-                                 lookback = Inf) {
-  
-  data <- .track_forecast_prepare(
+track_forecast_regression_locationmatch <- function(
     .data,
-    n = nrow(.data)
-  )
+    horizon = 1,
+    radius = 0.1,
+    lookback = Inf,
+    id = "elephant",
+    time = "datetime",
+    x = "x_km",
+    y = "y_km"
+) {
   
+  # Validate columns
+  required_cols <- c(id, time, x, y)
+  
+  missing_cols <- setdiff(required_cols, names(.data))
+  
+  if (length(missing_cols) > 0) {
+    stop(
+      "Missing required columns: ",
+      paste(missing_cols, collapse = ", ")
+    )
+  }
+  
+  data <- .data |>
+    dplyr::transmute(
+      animal_id = .data[[id]],
+      time = .data[[time]],
+      x = .data[[x]],
+      y = .data[[y]]
+    ) |>
+    dplyr::arrange(time)
+  
+  # Current location
   current <- dplyr::slice_tail(data, n = 1)
   
-  # Historical matching observations
+  # Historical location matching
   history <- data |>
     dplyr::filter(time < current$time) |>
     dplyr::mutate(
@@ -33,7 +56,7 @@ track_forecast_regression_locationmatch <- function(.data,
       time >= current$time - lookback * 3600
     )
   
-  # Find future coordinates for each match
+  # Find corresponding future locations
   matches <- lapply(seq_len(nrow(history)), function(i) {
     
     target <- history$time[i] + horizon * 3600
@@ -54,6 +77,7 @@ track_forecast_regression_locationmatch <- function(.data,
       future_x = data$x[j],
       future_y = data$y[j]
     )
+    
   }) |>
     dplyr::bind_rows()
   
@@ -61,6 +85,7 @@ track_forecast_regression_locationmatch <- function(.data,
     stop("At least three historical analogues are required.")
   }
   
+  # Regression models
   model_x <- stats::lm(future_x ~ x + y, data = matches)
   model_y <- stats::lm(future_y ~ x + y, data = matches)
   

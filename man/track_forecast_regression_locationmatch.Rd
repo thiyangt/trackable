@@ -7,8 +7,12 @@
 track_forecast_regression_locationmatch(
   .data,
   horizon = 1,
-  radius = 100,
-  lookback = Inf
+  radius = 0.1,
+  lookback = Inf,
+  id = "elephant",
+  time = "datetime",
+  x = "x_km",
+  y = "y_km"
 )
 }
 \arguments{

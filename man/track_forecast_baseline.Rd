@@ -18,5 +18,5 @@ A tibble containing the predicted location and forecast time.
 }
 \description{
 Forecast the next location of an animal using its recent
-movement history.
+movement history and mean velocity.
 }

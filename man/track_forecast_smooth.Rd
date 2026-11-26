@@ -4,7 +4,16 @@
 \alias{track_forecast_smooth}
 \title{Forecast Location Using Weighted Movement Velocities}
 \usage{
-track_forecast_smooth(.data, n = 5, horizon = 1, decay = 0.7)
+track_forecast_smooth(
+  .data,
+  n = 5,
+  horizon = 1,
+  decay = 0.7,
+  id = "elephant",
+  time = "datetime",
+  x = "x_km",
+  y = "y_km"
+)
 }
 \arguments{
 \item{.data}{A trackable object containing one animal's
@@ -16,6 +25,14 @@ movement observations.}
 
 \item{decay}{Controls the rate at which weights decrease
 for older observations. Must be between 0 and 1.}
+
+\item{id}{Name of the animal identifier column.}
+
+\item{time}{Name of the datetime column.}
+
+\item{x}{Name of the x-coordinate column.}
+
+\item{y}{Name of the y-coordinate column.}
 }
 \value{
 A tibble containing the forecast animal ID,

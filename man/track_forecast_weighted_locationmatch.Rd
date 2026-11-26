@@ -7,7 +7,7 @@
 track_forecast_weighted_locationmatch(
   .data,
   horizon = 1,
-  radius = 100,
+  radius = 0.1,
   lookback = Inf,
   decay = 0.5
 )

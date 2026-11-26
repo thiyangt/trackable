@@ -2,27 +2,107 @@
 % Please edit documentation in R/track_forecast_step_locationmatch.R
 \name{track_forecast_step_locationmatch}
 \alias{track_forecast_step_locationmatch}
-\title{Forecast Using Historical Movement Steps}
+\title{Forecast Animal Location Using Historical Step Displacements}
 \usage{
 track_forecast_step_locationmatch(
   .data,
   horizon = 1,
-  radius = 100,
-  lookback = Inf
+  radius = 0.1,
+  lookback = Inf,
+  tolerance = 0.5,
+  max_radius = 5,
+  id = "elephant",
+  time = "datetime",
+  x = "x_km",
+  y = "y_km"
 )
 }
 \arguments{
-\item{.data}{A trackable object.}
+\item{.data}{A data frame containing animal movement observations.}
 
 \item{horizon}{Forecast horizon in hours.}
 
-\item{radius}{Search radius in coordinate units.}
+\item{radius}{Initial spatial search radius, in the same units as the
+coordinate variables.}
 
-\item{lookback}{Historical search window in hours.}
+\item{lookback}{Historical search window in hours. Defaults to \code{Inf},
+which considers all available historical observations.}
+
+\item{tolerance}{Maximum acceptable difference, in hours, between the
+target forecast time and the nearest observed timestamp.}
+
+\item{max_radius}{Maximum spatial search radius used when expanding the
+initial search radius.}
+
+\item{id}{Name of the animal identifier column.}
+
+\item{time}{Name of the timestamp column.}
+
+\item{x}{Name of the x-coordinate column.}
+
+\item{y}{Name of the y-coordinate column.}
 }
 \value{
-Predicted animal location.
+A tibble containing the animal identifier, forecast timestamp,
+predicted x and y coordinates, number of historical matches, and
+spatial search radius used.
 }
 \description{
-Forecast Using Historical Movement Steps
+Identifies historical observations at locations close to the animal's
+current position and uses their subsequent movement to forecast its
+future location. For each historical observation, the function finds
+the GPS observation closest to the specified forecast horizon and
+calculates the corresponding displacement in the x and y directions.
+The median historical displacement is then added to the animal's
+current location to obtain the forecast.
+}
+\details{
+If no historical matches are found within the initial search radius,
+the function progressively increases the radius until matches are
+found or the maximum search radius is reached.
+
+Historical observations are selected based on their spatial proximity
+to the animal's most recent recorded location and their occurrence
+within the specified lookback period.
+
+For each selected observation at time \(t_i\), the function identifies
+the nearest observation to \(t_i + h\), where \(h\) is the forecast
+horizon. Historical displacement vectors are calculated as
+
+\deqn{
+\Delta x_i = x_{t_i+h} - x_{t_i}, \qquad
+\Delta y_i = y_{t_i+h} - y_{t_i}.
+}
+
+The median displacement components are used to forecast the next
+location:
+
+\deqn{
+\hat{x}_{t+h} = x_t + \mathrm{median}(\Delta x_i),
+}
+\deqn{
+\hat{y}_{t+h} = y_t + \mathrm{median}(\Delta y_i).
+}
+
+The search radius is progressively expanded when no historical
+matches are available within the initial radius. The resulting
+\code{search_radius} and \code{n_matches} values provide information about the
+historical observations used for the forecast.
+
+Coordinates should use a suitable projected coordinate reference
+system so that spatial distances are meaningful. The input should
+contain observations for a single animal.
+}
+\examples{
+\dontrun{
+track_forecast_step_locationmatch(
+  trk_ele,
+  horizon = 1,
+  radius = 0.1,
+  lookback = 168,
+  tolerance = 0.5,
+  max_radius = 5
+)
+}
+
 }
